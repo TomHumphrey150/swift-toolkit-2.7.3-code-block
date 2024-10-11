@@ -176,6 +176,9 @@ public struct TextContentElement: Hashable, TextualContentElement {
 
         /// A quotation.
         case quote(referenceUrl: URL?, referenceTitle: String?)
+        
+        /// A code block
+        case codeBlock
     }
 
     /// Ranged portion of text with associated attributes.

@@ -222,7 +222,7 @@ public class HTMLResourceContentIterator: ContentIterator {
                 let tag = node.tagNameNormal()
 
                 // Check if the element is a code block
-                if tag == "pre" || tag == "code" || node.hasClass("pre") || node.hasClass("code") {
+                if tag == "pre" || node.hasClass("pre") || node.hasClass("code") {
                     codeBlockDepth += 1
                     flushText() // Flush any accumulated text before entering code block
                 }
@@ -316,7 +316,7 @@ public class HTMLResourceContentIterator: ContentIterator {
             } else if let node = node as? Element {
                 let tag = node.tagNameNormal()
 
-                if tag == "pre" || tag == "code" || node.hasClass("pre") || node.hasClass("code") {
+                if tag == "pre" || node.hasClass("pre") || node.hasClass("code") {
                     flushText() // Flush code block text
                     codeBlockDepth -= 1
                 }
@@ -377,7 +377,7 @@ public class HTMLResourceContentIterator: ContentIterator {
                             )
                         }
                     ),
-                    role: .body,
+                    role: isInCodeBlock ? .codeBlock : .body,
                     segments: segmentsAcc
                 )
             )
