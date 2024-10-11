@@ -227,8 +227,7 @@ public class HTMLResourceContentIterator: ContentIterator {
                     flushText() // Flush any accumulated text before entering code block
                 }
 
-                // Handle block elements differently when inside code blocks
-                if node.isBlock() && !isInCodeBlock {
+                if node.isBlock() {
                     flushText()
                     breadcrumbs.append(parent)
                 }
@@ -322,7 +321,7 @@ public class HTMLResourceContentIterator: ContentIterator {
                     codeBlockDepth -= 1
                 }
 
-                if node.isBlock() && !isInCodeBlock {
+                if node.isBlock() {
                     assert(breadcrumbs.last?.element == node)
                     flushText()
                     breadcrumbs.removeLast()
