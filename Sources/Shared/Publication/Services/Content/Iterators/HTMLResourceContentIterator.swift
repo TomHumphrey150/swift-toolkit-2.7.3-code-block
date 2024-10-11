@@ -363,9 +363,26 @@ public class HTMLResourceContentIterator: ContentIterator {
                 segment.text = segment.text.trimingTrailingWhitespacesAndNewlines()
                 segmentsAcc[segmentsAcc.count - 1] = segment
             }
-
-            elements.append(
-                TextContentElement(
+            
+            let textContentElement: TextContentElement
+            if isInCodeBlock {
+                textContentElement = TextContentElement(
+                    locator: baseLocator.copy(
+                        locations: {
+                            $0.otherLocations["cssSelector"] = parent?.cssSelector as Any
+                        },
+                        text: {
+                            $0 = Locator.Text(
+                                before: self.segmentsAcc.first?.locator.text.before,
+                                highlight: self.elementRawTextAcc
+                            )
+                        }
+                    ),
+                    role: isInCodeBlock ? .codeBlock : .body,
+                    segments: segmentsAcc
+                )
+            } else {
+                textContentElement = TextContentElement(
                     locator: baseLocator.copy(
                         locations: {
                             $0.otherLocations["cssSelector"] = parent?.cssSelector as Any
@@ -380,7 +397,9 @@ public class HTMLResourceContentIterator: ContentIterator {
                     role: isInCodeBlock ? .codeBlock : .body,
                     segments: segmentsAcc
                 )
-            )
+            }
+
+            elements.append(textContentElement)
             elementRawTextAcc = ""
             segmentsAcc.removeAll()
         }
