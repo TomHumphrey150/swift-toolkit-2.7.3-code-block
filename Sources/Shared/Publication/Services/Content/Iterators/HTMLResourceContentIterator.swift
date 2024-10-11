@@ -197,6 +197,14 @@ public class HTMLResourceContentIterator: ContentIterator {
 
         /// LIFO stack of the current element's block ancestors.
         private var breadcrumbs: [ParentElement] = []
+        
+        /// Counter to track the nesting level of code blocks.
+        private var codeBlockDepth = 0
+
+        /// Indicates whether the parser is currently inside a code block.
+        private var isInCodeBlock: Bool {
+            return codeBlockDepth > 0
+        }
 
         private struct ParentElement {
             let element: Element
@@ -211,12 +219,19 @@ public class HTMLResourceContentIterator: ContentIterator {
         public func head(_ node: Node, _ depth: Int) throws {
             if let node = node as? Element {
                 let parent = ParentElement(element: node)
-                if node.isBlock() {
+                let tag = node.tagNameNormal()
+
+                // Check if the element is a code block
+                if tag == "pre" || tag == "code" || node.hasClass("pre") || node.hasClass("code") {
+                    codeBlockDepth += 1
+                    flushText() // Flush any accumulated text before entering code block
+                }
+
+                // Handle block elements differently when inside code blocks
+                if node.isBlock() && !isInCodeBlock {
                     flushText()
                     breadcrumbs.append(parent)
                 }
-
-                let tag = node.tagNameNormal()
 
                 lazy var elementLocator: Locator = baseLocator.copy(
                     locations: {
@@ -274,7 +289,7 @@ public class HTMLResourceContentIterator: ContentIterator {
                         }
                     }
 
-                } else if node.isBlock() {
+                } else if node.isBlock() && !isInCodeBlock {
                     flushText()
                 }
             }
@@ -282,12 +297,15 @@ public class HTMLResourceContentIterator: ContentIterator {
 
         func tail(_ node: Node, _ depth: Int) throws {
             if let node = node as? TextNode {
-                guard let wholeText = node.getWholeText().takeUnlessBlank() else {
+                let wholeText = node.getWholeText()
+
+                // If the text is blank and we're not in a code block, skip processing
+                if !isInCodeBlock && wholeText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     return
                 }
 
                 let language = try node.language().map { Language(code: .bcp47($0)) }
-                if currentLanguage != language {
+                if currentLanguage != language && !isInCodeBlock {
                     flushSegment()
                     currentLanguage = language
                 }
@@ -297,7 +315,14 @@ public class HTMLResourceContentIterator: ContentIterator {
                 try appendNormalisedText(text)
 
             } else if let node = node as? Element {
-                if node.isBlock() {
+                let tag = node.tagNameNormal()
+
+                if tag == "pre" || tag == "code" || node.hasClass("pre") || node.hasClass("code") {
+                    flushText() // Flush code block text
+                    codeBlockDepth -= 1
+                }
+
+                if node.isBlock() && !isInCodeBlock {
                     assert(breadcrumbs.last?.element == node)
                     flushText()
                     breadcrumbs.removeLast()
@@ -306,7 +331,11 @@ public class HTMLResourceContentIterator: ContentIterator {
         }
 
         private func appendNormalisedText(_ text: String) throws {
-            StringUtil.appendNormalisedWhitespace(textAcc, string: text, stripLeading: lastCharIsWhitespace())
+            if isInCodeBlock {
+                textAcc.append(text)
+            } else {
+                StringUtil.appendNormalisedWhitespace(textAcc, string: text, stripLeading: lastCharIsWhitespace())
+            }
         }
 
         private func lastCharIsWhitespace() -> Bool {
@@ -330,10 +359,8 @@ public class HTMLResourceContentIterator: ContentIterator {
                 return
             }
 
-            // Trim the end of the last segment's text to get a cleaner output
-            // for the TextContentElement. Only whitespaces between the
-            // segments are meaningful.
-            if var segment = segmentsAcc.last {
+            // Trim the end of the last segment's text for normal text
+            if !isInCodeBlock, var segment = segmentsAcc.last {
                 segment.text = segment.text.trimingTrailingWhitespacesAndNewlines()
                 segmentsAcc[segmentsAcc.count - 1] = segment
             }
@@ -361,26 +388,10 @@ public class HTMLResourceContentIterator: ContentIterator {
 
         private func flushSegment() {
             var text = textAcc.toString()
-            let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
-            if !trimmedText.isEmpty {
-                if segmentsAcc.isEmpty {
-                    text = text.trimmingLeadingWhitespacesAndNewlines()
-
-                    let whitespaceSuffix = text.last
-                        .takeIf { $0.isWhitespace }
-                        .map { String($0) }
-                        ?? ""
-
-                    text = trimmedText + whitespaceSuffix
-                }
-
+            if isInCodeBlock {
+                // Do not trim whitespace for code blocks; preserve text as is
                 let parent = breadcrumbs.last
-
-                var attributes: [ContentAttribute] = []
-                if let lang = currentLanguage {
-                    attributes.append(ContentAttribute(key: .language, value: lang))
-                }
 
                 segmentsAcc.append(TextContentElement.Segment(
                     locator: baseLocator.copy(
@@ -390,15 +401,56 @@ public class HTMLResourceContentIterator: ContentIterator {
                             ]
                         },
                         text: { [self] in
-                            $0 = Locator.Text.trimming(
-                                text: rawTextAcc,
-                                before: (wholeRawTextAcc?.suffix(beforeMaxLength)).map { String($0) }
+                            $0 = Locator.Text(
+                                after: nil,
+                                before: (wholeRawTextAcc?.suffix(beforeMaxLength)).map { String($0) },
+                                highlight: text
                             )
                         }
                     ),
                     text: text,
-                    attributes: attributes
+                    attributes: []
                 ))
+            } else {
+                let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if !trimmedText.isEmpty {
+                    if segmentsAcc.isEmpty {
+                        text = text.trimmingLeadingWhitespacesAndNewlines()
+
+                        let whitespaceSuffix = text.last
+                            .takeIf { $0.isWhitespace }
+                            .map { String($0) }
+                            ?? ""
+
+                        text = trimmedText + whitespaceSuffix
+                    }
+
+                    let parent = breadcrumbs.last
+
+                    var attributes: [ContentAttribute] = []
+                    if let lang = currentLanguage {
+                        attributes.append(ContentAttribute(key: .language, value: lang))
+                    }
+
+                    segmentsAcc.append(TextContentElement.Segment(
+                        locator: baseLocator.copy(
+                            locations: {
+                                $0.otherLocations = [
+                                    "cssSelector": parent?.cssSelector as Any,
+                                ]
+                            },
+                            text: { [self] in
+                                $0 = Locator.Text.trimming(
+                                    text: rawTextAcc,
+                                    before: (wholeRawTextAcc?.suffix(beforeMaxLength)).map { String($0) }
+                                )
+                            }
+                        ),
+                        text: text,
+                        attributes: attributes
+                    ))
+                }
             }
 
             if rawTextAcc != "" {
