@@ -173,7 +173,37 @@ class HTMLResourceContentIteratorTest: XCTestCase {
             locator: startLocator ?? locator()
         )
     }
-
+    
+    // MARK: - New Test Method for Code Elements Preserving Whitespace
+    
+    private let codeHtml = """
+        <div class="code"><div class="line" style="padding-left:0.0em;margin-left:1.5em;text-indent:-1.5em;"><span class="kd">extension</span> <span class="nc">GPSTrack</span> <span class="p">{</span>
+        </div><div class="line" style="padding-left:1.5em;margin-left:1.5em;text-indent:-1.5em;"><span class="c1">/// Returns all the timestamps for the GPS track.</span>
+        </div><div class="line" style="padding-left:1.5em;margin-left:1.5em;text-indent:-1.5em;"><span class="c1">/// - Complexity: O(*n*), where *n* is the number of points recorded.</span>
+        </div><div class="line" style="padding-left:1.5em;margin-left:1.5em;text-indent:-1.5em;"><span class="kd">var</span> <span class="nv">timestamps</span><span class="p">:</span> <span class="p">[</span><span class="n">Date</span><span class="p">]</span> <span class="p">{</span>
+        </div><div class="line" style="padding-left:3.0em;margin-left:1.5em;text-indent:-1.5em;"><span class="k">return</span> <span class="n">record</span><span class="p">.</span><span class="bp">map</span> <span class="p">{</span> <span class="nv">$0</span><span class="p">.</span><span class="mi">1</span> <span class="p">}</span>
+        </div><div class="line" style="padding-left:1.5em;margin-left:1.5em;text-indent:-1.5em;"><span class="p">}</span>
+        </div><div class="line" style="padding-left:0.0em;margin-left:1.5em;text-indent:-1.5em;"><span class="p">}</span>
+        </div></div>
+        """
+    
+    private lazy var expectedCodeElements: [AnyEquatableContentElement] = [AnyEquatableContentElement]()
+    
+    func testIteratingOverCodeElementsPreservingWhitespace() throws {
+        // Initialize the iterator with the code HTML
+        let iter = iterator(codeHtml)
+        
+        // Iterate through the expected elements and verify each one
+        for expectedElement in expectedCodeElements {
+            let actualElement = try iter.next()
+            XCTAssertNotNil(actualElement, "Expected an element but got nil")
+            XCTAssertEqual(expectedElement, actualElement?.equatable(), "Elements do not match")
+        }
+        
+        // Ensure that there are no additional elements
+        XCTAssertNil(try iter.next(), "Expected no more elements, but found some")
+    }
+    
     func testIterateFromStartToFinish() throws {
         let iter = iterator(html)
         XCTAssertEqual(elements[0], try iter.next()?.equatable())
