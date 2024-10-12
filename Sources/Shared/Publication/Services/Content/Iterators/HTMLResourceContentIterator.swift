@@ -7,6 +7,28 @@
 import Foundation
 import SwiftSoup
 
+extension Node {
+    /// Finds the nearest ancestor `Element` that has the specified attribute, up to a maximum depth.
+    /// - Parameters:
+    ///   - attributeKey: The attribute key to search for (e.g., "style").
+    ///   - maxDepth: The maximum number of ancestor levels to traverse.
+    /// - Returns: The nearest ancestor `Element` with the attribute within the specified depth, or `nil` if none is found.
+    func nearestAncestor(withAttribute attributeKey: String, maxDepth: Int) throws -> Element? {
+        var currentNode: Node? = self.parent()
+        var currentDepth = 0
+        
+        while let element = currentNode as? Element, currentDepth < maxDepth {
+            if element.hasAttr(attributeKey) {
+                return element
+            }
+            currentNode = element.parent()
+            currentDepth += 1
+        }
+        
+        return nil
+    }
+}
+
 /// Iterates an HTML `resource`, starting from the given `locator`.
 ///
 /// If you want to start mid-resource, the `locator` must contain a
@@ -208,6 +230,8 @@ public class HTMLResourceContentIterator: ContentIterator {
         
         /// Keeps track of leading space (indentation) inside a code block
         var storedLeadingSpace: String?
+        
+        var ancestorsWithStyleExtracted: Set<Element> = []
 
         private struct ParentElement {
             let element: Element
@@ -296,6 +320,29 @@ public class HTMLResourceContentIterator: ContentIterator {
                 }
             }
         }
+        
+        // Function to convert padding-left and margin-left values (in em) to whitespace characters
+        func convertEmToWhitespace(emValue: Double) -> String {
+            let spacesPerEm = 2.0 // Chosen by eye
+            let numberOfSpaces = Int(emValue * spacesPerEm)
+            return String(repeating: " ", count: numberOfSpaces)
+        }
+
+        // Function to extract and process style values
+        func convertStyleToWhitespace(style: String) -> String {
+            let regex = try! NSRegularExpression(pattern: "(padding-left|margin-left):([0-9.]+)em;", options: [])
+            let matches = regex.matches(in: style, options: [], range: NSRange(style.startIndex..., in: style))
+
+            var totalWhitespace = ""
+            for match in matches {
+                if let range = Range(match.range(at: 2), in: style) {
+                    if let emValue = Double(style[range]) {
+                        totalWhitespace += convertEmToWhitespace(emValue: emValue)
+                    }
+                }
+            }
+            return totalWhitespace
+        }
 
         func tail(_ node: Node, _ depth: Int) throws {
             if let node = node as? TextNode {
@@ -308,11 +355,24 @@ public class HTMLResourceContentIterator: ContentIterator {
                 }
                 wholeText += node.getWholeText()
                 
+                /// This is code indentation.
                 if isInCodeBlock && wholeText.trimmingCharacters(in: .whitespaces).isEmpty && !wholeText.isEmpty {
-                    /// This is code indentation.
-                    /// Don't worry about empty lines, they don't make it in here because they have a newline character.
+                    /// Some Epubs do indentation with whitespace. Which SwiftSoupt treats as a prior text node.
+                    /// Therefore store it, and early exit, use the whitespace on the next node.
+                    /// Don't worry about deliberate empty lines, they don't make it in here because they have a newline character.
                     storedLeadingSpace = wholeText
                     return
+                } else if isInCodeBlock,
+                          let ancestorElement = try node.nearestAncestor(withAttribute: "style", maxDepth: 5),
+                          !ancestorsWithStyleExtracted.contains(ancestorElement) {
+                    /// maxDepth is arbitrary, but works so far.
+                    
+                    /// Don't apply the same margins to every element inside the div. Only the first element on the line needs it.
+                    ancestorsWithStyleExtracted.insert(ancestorElement)
+                    
+                    let styleAttribute = try ancestorElement.attr("style")
+                    let whitespace = convertStyleToWhitespace(style: styleAttribute)
+                    wholeText = whitespace + wholeText
                 }
 
                 // If the text is blank and we're not in a code block, skip processing
