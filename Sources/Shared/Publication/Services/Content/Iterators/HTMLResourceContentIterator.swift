@@ -205,6 +205,9 @@ public class HTMLResourceContentIterator: ContentIterator {
         private var isInCodeBlock: Bool {
             return codeBlockDepth > 0
         }
+        
+        /// Keeps track of leading space (indentation) inside a code block
+        var storedLeadingSpace: String?
 
         private struct ParentElement {
             let element: Element
@@ -296,7 +299,21 @@ public class HTMLResourceContentIterator: ContentIterator {
 
         func tail(_ node: Node, _ depth: Int) throws {
             if let node = node as? TextNode {
-                let wholeText = node.getWholeText()
+                var wholeText = ""
+                if isInCodeBlock {
+                    wholeText += storedLeadingSpace ?? ""
+                    storedLeadingSpace = ""
+                } else {
+                    storedLeadingSpace = ""
+                }
+                wholeText += node.getWholeText()
+                
+                if isInCodeBlock && wholeText.trimmingCharacters(in: .whitespaces).isEmpty && !wholeText.isEmpty {
+                    /// This is code indentation.
+                    /// Don't worry about empty lines, they don't make it in here because they have a newline character.
+                    storedLeadingSpace = wholeText
+                    return
+                }
 
                 // If the text is blank and we're not in a code block, skip processing
                 if !isInCodeBlock && wholeText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
