@@ -441,41 +441,42 @@ public class HTMLResourceContentIterator: ContentIterator {
                 segmentsAcc[segmentsAcc.count - 1] = segment
             }
             
-            let textContentElement: TextContentElement
+            // Determine the role based on the current element
+            let role: TextContentElement.Role
             if isInCodeBlock {
-                textContentElement = TextContentElement(
-                    locator: baseLocator.copy(
-                        locations: {
-                            $0.otherLocations["cssSelector"] = parent?.cssSelector as Any
-                        },
-                        text: {
+                role = .codeBlock
+            } else if let tagName = parent?.element.tagNameNormal(),
+                      tagName.starts(with: "h"),
+                      let level = Int(tagName.dropFirst()),
+                      (1...6).contains(level) {
+                role = .heading(level: level)
+            } else {
+                role = .body
+            }
+            
+            let textContentElement = TextContentElement(
+                locator: baseLocator.copy(
+                    locations: {
+                        $0.otherLocations["cssSelector"] = parent?.cssSelector as Any
+                    },
+                    text: {
+                        if self.isInCodeBlock {
                             $0 = Locator.Text(
                                 before: self.segmentsAcc.first?.locator.text.before,
                                 highlight: self.elementRawTextAcc
                             )
-                        }
-                    ),
-                    role: isInCodeBlock ? .codeBlock : .body,
-                    segments: segmentsAcc
-                )
-            } else {
-                textContentElement = TextContentElement(
-                    locator: baseLocator.copy(
-                        locations: {
-                            $0.otherLocations["cssSelector"] = parent?.cssSelector as Any
-                        },
-                        text: {
+                        } else {
                             $0 = Locator.Text.trimming(
                                 text: self.elementRawTextAcc,
                                 before: self.segmentsAcc.first?.locator.text.before
                             )
                         }
-                    ),
-                    role: isInCodeBlock ? .codeBlock : .body,
-                    segments: segmentsAcc
-                )
-            }
-
+                    }
+                ),
+                role: role,
+                segments: segmentsAcc
+            )
+            
             elements.append(textContentElement)
             elementRawTextAcc = ""
             segmentsAcc.removeAll()

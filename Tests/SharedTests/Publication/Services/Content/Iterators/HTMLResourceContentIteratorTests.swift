@@ -187,11 +187,106 @@ class HTMLResourceContentIteratorTest: XCTestCase {
         </div></div>
         """
     
+    private let codeEdgeCase2Html = """
+        <p>And: </p>
+        <pre><code><span class="token keyword">struct</span> <span class="token builtin">MenuItem</span><span class="token punctuation">:</span> <span class="token builtin">Codable</span><span class="token punctuation">,</span> <span class="token builtin">Equatable</span><span class="token punctuation">,</span> <span class="token builtin">Identifiable</span> <span class="token punctuation">{</span></code></pre>
+        <p>If you run the code now you’ll see twelve rows containing “Hello World” – something you might not have expected.</p>
+        """
+    
+    private let chapterSectionEdgeCaseHtml = """
+        <?xml version='1.0' encoding='utf-8'?>
+        <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+          <head>
+            <title>Preface</title>
+            <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+            <meta content="" name="description"/>
+            <meta content="GitBook 3.2.3" name="generator"/>
+            <meta content="" name="keywords"/>
+            <meta content="https://www.appcoda.com/swift" property="og:url"/>
+            <meta content="website" property="og:type"/>
+            <meta content="Mastering SwiftUI for iOS 18 and Xcode 16" property="og:title"/>
+            <meta content="Deep dive into SwiftUI and Build fluid UI with it" property="og:description"/>
+            <meta content="https://www.appcoda.com/learnswift/images/preface/swift-book-hand.png" property="og:image"/>
+            <meta content="Simon Ng" name="author"/>
+            <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+          <link href="stylesheet.css" rel="stylesheet" type="text/css"/>
+        <link href="page_styles.css" rel="stylesheet" type="text/css"/>
+        </head>
+          <body class="calibre">
+                
+        <div class="page">
+            
+                <h1 class="book-chapter" id="calibre_toc_1">Preface</h1>
+                <div class="section" id="README.md">
+                    <p class="calibre7"><img src="preface-cover.png" alt="" class="calibre8"/></p>
+                    <p class="calibre7"></p><div class="calibre9"></div>
+                    Copyright ©2024 by AppCoda Limited<p class="calibre7"></p>
+                    <p class="calibre7">All right reserved. No part of this book may be used or reproduced, stored or transmitted in any manner whatsoever without written permission from the publisher.</p>
+                    <p class="calibre7">Published by AppCoda Limited</p>
+                    <p class="calibre7"></p><div class="calibre9"></div><p class="calibre7"></p>
+                    <h1 id="preface" class="calibre10">Preface</h1>
+                    <p class="calibre7">Frankly, I didn't expect Apple would announce anything big in WWDC 2019 that would completely change the way we build UI for Apple platforms. A couple years ago, Apple released a brand new framework called <em class="calibre11">SwiftUI</em>, along with the release of Xcode 11. The debut of SwiftUI was huge, really huge for existing iOS developers or someone who is going to learn iOS app building. It was unarguably the biggest change in iOS app development in recent years. </p>
+                    <p class="calibre7">I have been doing iOS programming for over 10 years and already get used to developing UIs with UIKit. I love to use a mix of storyboards and Swift code for building UIs. However, whether you prefer to use Interface Builder or create UI entirely using code, the approach of UI development on iOS doesn't change much. Everything is still relying on the UIKit framework. </p>
+                    <p class="calibre7">To me, SwiftUI is not merely a new framework. It's a paradigm shift that fundamentally changes the way you think about UI development on iOS and other Apple platforms. Instead of using the imperative programming style, Apple now advocates the declarative/functional programming style. Instead of specifying exactly how a UI component should be laid out and function, you focus on describing what elements you need in building the UI and what the actions should perform when programming in declarative style. </p>
+                    <p class="calibre7">If you have worked with React Native or Flutter before, you will find some similarities between the programming styles and probably find it easier to build UIs in SwiftUI. That said, even if you haven't developed in any functional programming languages before, it would just take you some time to get used to the syntax. Once you manage the basics, you will love the simplicity of coding complex layouts and animations in SwiftUI.</p>
+                    <p class="calibre7">SwiftUI has evolved so much in these five years. Apple has packed even more features and brought more UI components to the SwiftUI framework, which comes alongside with Xcode 16. It just takes UI development on iOS, iPadOS, and macOS to the next level. You can develop some fancy animations with way less code, as compared to UIKit. Most importantly, the latest version of the SwiftUI framework makes it easier for developers to develop apps for Apple platforms. You will understand what I mean after you go through the book.</p>
+                    <p class="calibre7">The release of SwiftUI doesn't mean that Interface Builder and UIKit are deprecated right away. They will still stay for many years to come. However, SwiftUI is the future of app development on Apple's platforms. To stay at the forefront of technological innovations, it's time to prepare yourself for this new way of UI development. And I hope this book will help you get started with SwiftUI development and build some amazing UIs.</p>
+                    <p class="calibre7">Simon Ng<br class="calibre12"/>
+                    Founder of AppCoda</p>
+                    <p class="calibre7"></p><div class="calibre9"></div><p class="calibre7"></p>
+                    <h2 id="what-you-will-learn-in-this-book" class="calibre13">What You Will Learn in This Book</h2>
+                    <p class="calibre7">We will dive deep into the SwiftUI framework, teaching you how to work with various UI elements, and build different types of UIs. After going through the basics and understanding the usage of common components, we will put together with all the materials you've learned and build a complete app.</p>
+                    <p class="calibre7">As always, we will explore SwiftUI with you by using the "Learn by doing" approach. This new book features a lot of hands-on exercises and projects. Don't expect you can just read the book and understand everything. You need to get prepared to write code and debug.</p>
+                    <h3 id="audience" class="calibre14">Audience</h3>
+                    <p class="calibre7">This book is written for both beginners and developers with some iOS programming experience. Even if you have developed an iOS app before, this book will help you understand this brand-new framework and the new way to develop UI. You will also learn how to integrate UIKit with SwiftUI.</p>
+                    <p class="calibre7"></p><div class="calibre9"></div><p class="calibre7"></p>
+                    <h2 id="what-you-need-to-develop-apps-with-swiftui" class="calibre13">What You Need to Develop Apps with SwiftUI</h2>
+                    <p class="calibre7">Having a Mac is the basic requirement for iOS development. To use SwiftUI, you need to have a Mac installed with macOS Catalina and Xcode 11 (or up). That said, to properly follow the content of this book, you are required to have Xcode 16 installed.</p>
+                    <p class="calibre7">If you are new to iOS app development, Xcode is an integrated development environment (IDE) provided by Apple. Xcode provides everything you need to kick start your app development. It already bundles the latest version of the iOS SDK (short for Software Development Kit), a built-in source code editor, graphic user interface (UI) editor, debugging tools and much more. Most importantly, Xcode comes with an iPhone (and iPad) simulator so you can test your app without the real devices. With Xcode 16, you can instantly preview the result of your SwiftUI code and test it on the fly.</p>
+                    <h4 id="installing-xcode" class="calibre14">Installing Xcode</h4>
+                    <p class="calibre7">To install Xcode, go up to the Mac App Store and download it. Simply search "Xcode" and click the "Get" button to download it. At the time of this writing, the latest official version of Xcode is 16.0. Once you complete the installation process, you will find Xcode in the Launchpad.</p>
+                    <p class="calibre7"><img src="preface-1.png" alt="" class="calibre8"/></p>
+                    <p class="calibre7"></p><div class="calibre9"></div><p class="calibre7"></p>
+                    <h3 id="frequestly-asked-questions-about-swiftui" class="calibre14">Frequestly Asked Questions about SwiftUI</h3>
+                    <p class="calibre7">I got quite a lot of questions from new comers when the SwiftUI framework was first announced. These questions are some of the common ones that I want to share with you. And I hope the answers will give you a better idea about SwiftUI.</p>
+                    <ol class="calibre2">
+                    <li class="calibre15"><p class="calibre7"><strong class="calibre16"><em class="calibre11">Do I need to learn Swift before learning SwiftUI?</em></strong></p>
+                    <p class="calibre7">Yes, you still need to know the Swift programming language before using SwiftUI. SwiftUI is just a UI framework written in Swift. Here, the keyword is UI, meaning that the framework is designed for building user interfaces. However, for a complete application, other than UI, there are many other components such as network components for connecting to remote server, data components for loading data from internal database, business logic component for handling the flow of data, etc. All these components are not built using SwiftUI. So, you should be knowledgeable about Swift and SwiftUI, as well as, other built-in frameworks (e.g. Map) in order to build an app. </p>
+                    </li>
+                    <li class="calibre15"><p class="calibre7"><strong class="calibre16"><em class="calibre11">Should I learn SwiftUI or UIKit?</em></strong></p>
+                    <p class="calibre7">The short answer is Both. That said, it all depends on your goals. If you target to become a professional iOS developer and apply for a job in iOS development, you better equip yourself with knowledge of SwiftUI and UIKit. Over 90% of the apps published on the App Store were built using UIKit. To be considered for hire, you should be very knowledgeable with UIKit because most companies are still using the framework to build the app UI. However, like any technological advancement, companies will gradually adopt SwiftUI in new projects. This is why you need to learn both to increase your employment opportunities. </p>
+                    <p class="calibre7">On the other hand, if you just want to develop an app for your personal or side project, you can develop it entirely using SwiftUI. However, since SwiftUI is very new, it doesn't cover all the UI components that you can find in UIKit. In some cases, you may also need to integrate UIKit with SwiftUI.</p>
+                    </li>
+                    <li class="calibre15"><p class="calibre7"><strong class="calibre16"><em class="calibre11">Do I need to learn auto layout?</em></strong></p>
+                    <p class="calibre7">This may be a good news to some of you. Many beginners find it hard to work with auto layout. With SwiftUI, you no longer need to define layout constraints. Instead, you use stacks, spacers, and padding to arrange the layout.</p>
+                    </li>
+                    </ol>
+
+                </div>
+            
+        </div>
+        </body></html>
+        """
+    
     private lazy var expectedCodeElements: [AnyEquatableContentElement] = [AnyEquatableContentElement]()
     
     func testIteratingOverCodeElementsPreservingWhitespace() throws {
         // Initialize the iterator with the code HTML
-        let iter = iterator(codeHtml)
+        let iter = iterator(chapterSectionEdgeCaseHtml)
+        
+        var miniTextElements = [ContentElement]()
+        
+        while let element = try iter.next() {
+            
+            guard let textElement = element as? TextContentElement else {
+                continue
+            }
+            let text = textElement.text
+            let role = textElement.role
+            miniTextElements.append(textElement)
+        }
+        
+        print(miniTextElements)
         
         // Iterate through the expected elements and verify each one
         for expectedElement in expectedCodeElements {
